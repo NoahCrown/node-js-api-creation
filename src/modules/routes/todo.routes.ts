@@ -10,6 +10,7 @@ import {
 const router = Router();
 
 router.get('/', TodoController.getAllTodos);
+router.get('/:id', TodoController.getTodoById);
 router.post(
   '/',
   validateRequest(createTodoSchema, 'body') as RequestHandler,

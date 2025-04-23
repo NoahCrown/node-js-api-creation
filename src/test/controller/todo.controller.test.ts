@@ -50,6 +50,29 @@ describe('TodoController', () => {
     });
   });
 
+  describe('getTodoById', () => {
+    it('should return a todo by id', async () => {
+      const mockTodo = {
+        id: '1',
+        title: 'Todo 1',
+        description: 'Description 1',
+        completed: false,
+      };
+
+      (TodoService.getTodoById as jest.Mock).mockResolvedValue(mockTodo);
+
+      req.params = { id: '1' };
+
+      await TodoController.getTodoById(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        status: 'success',
+        data: mockTodo,
+      });
+    });
+  });
+
   describe('createTodo', () => {
     it('should create a todo', async () => {
       const mockTodo = {
