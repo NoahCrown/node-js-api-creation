@@ -2,8 +2,26 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import prisma from '../../utils/prisma';
 import { DatabaseError, NotFoundError } from '../../utils/errors';
 
+interface PaginationParams {
+  page?: number;
+  limit?: number;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  metadata: {
+    total: number;
+    currentPage: number;
+    pageSize: number;
+    totalPages: number;
+  };
+}
+
 class TodoService {
   private prisma: PrismaClient;
+  private readonly DEFAULT_PAGE_SIZE = 10;
+  private readonly MAX_PAGE_SIZE = 100;
+
   constructor() {
     this.prisma = prisma;
   }
@@ -23,12 +41,35 @@ class TodoService {
     }
   }
 
-  public async getAllTodos() {
+  public async getAllTodos(
+    params?: PaginationParams
+  ): Promise<PaginatedResponse<Prisma.TodoGetPayload<{}>>> {
     try {
-      const todos = await this.prisma.todo.findMany({
-        orderBy: { createdAt: 'desc' },
-      });
-      return todos;
+      const page = Math.max(params?.page ?? 1, 1);
+      const limit = Math.min(
+        Math.max(params?.limit ?? this.DEFAULT_PAGE_SIZE, 1),
+        this.MAX_PAGE_SIZE
+      );
+      const skip = (page - 1) * limit;
+
+      const [todos, total] = await Promise.all([
+        this.prisma.todo.findMany({
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.todo.count(),
+      ]);
+
+      return {
+        data: todos,
+        metadata: {
+          total,
+          currentPage: page,
+          pageSize: limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
     } catch (error) {
       console.error('Error fetching todos:', error);
       throw new DatabaseError('Failed to fetch todos', error);

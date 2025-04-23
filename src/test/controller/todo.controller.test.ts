@@ -10,7 +10,9 @@ describe('TodoController', () => {
   let res: Response;
 
   beforeEach(() => {
-    req = {} as Request;
+    req = {
+      query: {},
+    } as Request;
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
@@ -22,30 +24,42 @@ describe('TodoController', () => {
   });
 
   describe('getAllTodos', () => {
-    it('should return all todos', async () => {
-      const mockTodos = [
-        {
-          id: '1',
-          title: 'Todo 1',
-          description: 'Description 1',
-          completed: false,
-        },
-        {
-          id: '2',
-          title: 'Todo 2',
-          description: 'Description 2',
-          completed: true,
-        },
-      ];
+    const mockTodos = [
+      {
+        id: '1',
+        title: 'Todo 1',
+        description: 'Description 1',
+        completed: false,
+      },
+      {
+        id: '2',
+        title: 'Todo 2',
+        description: 'Description 2',
+        completed: true,
+      },
+    ];
 
-      (TodoService.getAllTodos as jest.Mock).mockResolvedValue(mockTodos);
+    const mockPaginatedResponse = {
+      data: mockTodos,
+      metadata: {
+        total: 10,
+        currentPage: 1,
+        pageSize: 10,
+        totalPages: 1,
+      },
+    };
+
+    it('should return all todos with default pagination parameters', async () => {
+      (TodoService.getAllTodos as jest.Mock).mockResolvedValue(
+        mockPaginatedResponse
+      );
 
       await TodoController.getAllTodos(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         status: 'success',
-        data: mockTodos,
+        data: mockPaginatedResponse,
       });
     });
   });
